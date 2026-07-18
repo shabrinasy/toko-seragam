@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase, Produk } from "@/lib/supabase";
 import UkuranInput from "@/components/UkuranInput";
 import AngkaRibuanInput from "@/components/AngkaRibuanInput";
@@ -20,6 +20,34 @@ const emptySharedForm: SharedForm = {
   gender: "Putri",
   harga: 0,
 };
+
+type ProdukGroup = {
+  key: string;
+  nama: string;
+  gender: "Putra" | "Putri";
+  kategori: string | null;
+  harga: number;
+  varian: Produk[]; // satu baris per ukuran, urut nama ukuran
+};
+
+function groupProduk(list: Produk[]): ProdukGroup[] {
+  const map = new Map<string, ProdukGroup>();
+  for (const p of list) {
+    const key = `${p.nama}||${p.gender}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        nama: p.nama,
+        gender: p.gender,
+        kategori: p.kategori,
+        harga: p.harga_default,
+        varian: [],
+      });
+    }
+    map.get(key)!.varian.push(p);
+  }
+  return Array.from(map.values());
+}
 
 type UkuranRow = {
   key: string;
@@ -42,10 +70,10 @@ export default function ProdukPage() {
   const [form, setForm] = useState<SharedForm>(emptySharedForm);
   const [ukuranRows, setUkuranRows] = useState<UkuranRow[]>([newUkuranRow()]);
 
-  // Form edit produk existing (1 baris = 1 produk, stok tidak diedit di sini)
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Form edit produk: berlaku untuk SEMUA ukuran dalam 1 grup nama+gender
+  // sekaligus (kecuali stok, yang tetap per ukuran & tidak diedit di sini)
+  const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<SharedForm>(emptySharedForm);
-  const [editUkuran, setEditUkuran] = useState("S");
 
   useEffect(() => {
     load();
@@ -55,6 +83,8 @@ export default function ProdukPage() {
     const { data } = await supabase.from("produk").select("*").order("nama");
     setProdukList(data ?? []);
   }
+
+  const groups = useMemo(() => groupProduk(produkList), [produkList]);
 
   function resetForm() {
     setForm(emptySharedForm);
@@ -123,29 +153,29 @@ export default function ProdukPage() {
     load();
   }
 
-  function mulaiEdit(p: Produk) {
+  function mulaiEditGroup(g: ProdukGroup) {
     setShowForm(false);
-    setEditingId(p.id);
+    setEditingGroupKey(g.key);
     setEditForm({
-      nama: p.nama,
-      kategori: p.kategori ?? "",
-      gender: p.gender,
-      harga: p.harga_default,
+      nama: g.nama,
+      kategori: g.kategori ?? "",
+      gender: g.gender,
+      harga: g.harga,
     });
-    setEditUkuran(p.ukuran);
     setError(null);
   }
 
   function batalEdit() {
-    setEditingId(null);
+    setEditingGroupKey(null);
     setError(null);
   }
 
-  async function simpanEdit() {
-    if (editingId == null) return;
+  async function simpanEditGroup() {
+    const g = groups.find((gr) => gr.key === editingGroupKey);
+    if (!g) return;
     setError(null);
-    if (!editForm.nama.trim() || !editUkuran.trim()) {
-      setError("Nama dan ukuran wajib diisi.");
+    if (!editForm.nama.trim()) {
+      setError("Nama wajib diisi.");
       return;
     }
     if (editForm.harga <= 0) {
@@ -153,28 +183,29 @@ export default function ProdukPage() {
       return;
     }
     setSaving(true);
+    const ids = g.varian.map((v) => v.id);
     const { error: err } = await supabase
       .from("produk")
       .update({
         nama: editForm.nama.trim(),
-        ukuran: editUkuran.trim(),
         kategori: editForm.kategori.trim() || null,
         gender: editForm.gender,
         harga_default: editForm.harga,
-        // stok sengaja tidak diubah di sini -- hanya lewat transaksi/penerimaan barang
+        // stok & ukuran sengaja tidak diubah di sini -- tetap per baris,
+        // dan stok hanya berubah lewat transaksi/Penerimaan Barang
       })
-      .eq("id", editingId);
+      .in("id", ids);
     setSaving(false);
     if (err) {
       setError(err.message);
       return;
     }
-    setEditingId(null);
+    setEditingGroupKey(null);
     load();
   }
 
-  const filtered = produkList.filter((p) =>
-    p.nama.toLowerCase().includes(search.toLowerCase())
+  const filteredGroups = groups.filter((g) =>
+    g.nama.toLowerCase().includes(search.toLowerCase())
   );
 
   function renderSharedFields(
@@ -242,7 +273,7 @@ export default function ProdukPage() {
         <h1 className="text-lg font-medium">Master produk</h1>
         <button
           onClick={() => {
-            setEditingId(null);
+            setEditingGroupKey(null);
             setShowForm((s) => !s);
           }}
           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs"
@@ -258,58 +289,69 @@ export default function ProdukPage() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {filtered.map((p) => (
-        <div key={p.id}>
+      {filteredGroups.map((g) => (
+        <div key={g.key}>
           <div className="mb-2 rounded-md border border-gray-200 p-2.5">
-            <div className="flex items-start justify-between">
+            <div className="mb-1 flex items-start justify-between">
               <div>
-                <div className="text-sm font-medium">{p.nama}</div>
+                <div className="text-sm font-medium">{g.nama}</div>
                 <div className="my-1 flex gap-1">
                   <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">
-                    {p.gender}
+                    {g.gender}
                   </span>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">
-                    {p.ukuran}
-                  </span>
+                  {g.kategori && (
+                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">
+                      {g.kategori}
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {formatRp(p.harga_default)}
+                  {formatRp(g.harga)}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-[11px] text-gray-400">Stok</div>
-                <div
-                  className={`mb-1.5 text-sm font-medium ${
-                    p.stok < 0 ? "text-amber-600" : "text-green-700"
-                  }`}
-                >
-                  {p.stok}
-                </div>
-                <button
-                  onClick={() =>
-                    editingId === p.id ? batalEdit() : mulaiEdit(p)
-                  }
-                  className="rounded-md border border-gray-300 px-2 py-1 text-[11px]"
-                >
-                  {editingId === p.id ? "Batal" : "Edit"}
-                </button>
-              </div>
+              <button
+                onClick={() =>
+                  editingGroupKey === g.key ? batalEdit() : mulaiEditGroup(g)
+                }
+                className="rounded-md border border-gray-300 px-2 py-1 text-[11px]"
+              >
+                {editingGroupKey === g.key ? "Batal" : "Edit"}
+              </button>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {g.varian
+                .slice()
+                .sort((a, b) => a.ukuran.localeCompare(b.ukuran))
+                .map((v) => (
+                  <span
+                    key={v.id}
+                    className="flex items-center gap-1 rounded bg-gray-50 px-2 py-1 text-[11px]"
+                  >
+                    <span className="font-medium">{v.ukuran}</span>
+                    <span
+                      className={
+                        v.stok < 0 ? "text-amber-600" : "text-green-700"
+                      }
+                    >
+                      stok {v.stok}
+                    </span>
+                  </span>
+                ))}
             </div>
           </div>
 
-          {editingId === p.id && (
+          {editingGroupKey === g.key && (
             <div className="-mt-1 mb-3 rounded-md border border-blue-200 bg-blue-50 p-3">
-              <div className="mb-2 text-sm font-medium">Edit produk</div>
+              <div className="mb-1 text-sm font-medium">
+                Edit produk (semua ukuran)
+              </div>
+              <div className="mb-2 text-[11px] text-gray-500">
+                Perubahan nama, gender, kategori, dan harga berlaku untuk
+                seluruh ukuran &#40;{g.varian.map((v) => v.ukuran).join(", ")}
+                &#41; sekaligus.
+              </div>
               {renderSharedFields(editForm, setEditForm)}
-
-              <label className="mb-1 block text-[11px] text-gray-500">
-                Ukuran
-              </label>
-              <UkuranInput
-                className="mb-2 w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
-                value={editUkuran}
-                onChange={setEditUkuran}
-              />
 
               <div className="mb-2 text-[11px] text-gray-500">
                 Stok tidak diedit di sini &mdash; stok hanya berubah lewat
@@ -326,7 +368,7 @@ export default function ProdukPage() {
                   Batal
                 </button>
                 <button
-                  onClick={simpanEdit}
+                  onClick={simpanEditGroup}
                   disabled={saving}
                   className="flex-1 rounded-md bg-blue-700 py-2 text-sm text-white disabled:opacity-50"
                 >

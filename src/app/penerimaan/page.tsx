@@ -85,12 +85,14 @@ export default function PenerimaanPage() {
           .eq("id", row.id);
       }
 
-      if (alokasi.sisaTambahStok > 0) {
-        await supabase
-          .from("produk")
-          .update({ stok: produk.stok + alokasi.sisaTambahStok })
-          .eq("id", produk.id);
-      }
+      // Stok selalu bertambah sejumlah barang masuk secara PENUH -- stok
+      // yang minus itu sendiri sudah merepresentasikan utang PO, jadi
+      // menambah stok dengan jumlah_masuk apa adanya otomatis "melunasi"
+      // utang tersebut sekaligus menyisakan kelebihan kalau ada.
+      await supabase
+        .from("produk")
+        .update({ stok: produk.stok + jumlahMasuk })
+        .eq("id", produk.id);
 
       setPesan("Barang masuk berhasil dicatat.");
       setJumlahMasuk(1);
