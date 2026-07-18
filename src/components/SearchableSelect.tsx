@@ -45,9 +45,11 @@ export default function SearchableSelect({
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(query.toLowerCase())
-  );
+  const queryWords = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const filtered = options.filter((o) => {
+    const label = o.label.toLowerCase();
+    return queryWords.every((w) => label.includes(w));
+  });
 
   return (
     <div ref={containerRef} className="relative">
