@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase, Produk, Transaksi, TransaksiDetail } from "@/lib/supabase";
+import SearchableSelect from "@/components/SearchableSelect";
 
 type PoBaris = TransaksiDetail & { transaksi: Transaksi };
 
@@ -109,17 +110,16 @@ export default function PenerimaanPage() {
       <h1 className="mb-4 text-lg font-medium">Penerimaan barang</h1>
 
       <label className="mb-1 block text-xs text-gray-500">Produk</label>
-      <select
-        className="mb-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        value={produkId ?? ""}
-        onChange={(e) => setProdukId(Number(e.target.value))}
-      >
-        {produkList.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nama} &middot; {p.gender} &middot; {p.ukuran}
-          </option>
-        ))}
-      </select>
+      <SearchableSelect
+        className="mb-1 w-full rounded-md border border-gray-300 px-3 py-2 text-left text-sm"
+        value={produkId != null ? String(produkId) : ""}
+        onChange={(v) => setProdukId(Number(v))}
+        placeholder="Pilih produk"
+        options={produkList.map((p) => ({
+          value: String(p.id),
+          label: `${p.nama} \u00b7 ${p.gender} \u00b7 ${p.ukuran}`,
+        }))}
+      />
       {produk && (
         <div className="mb-4 text-xs text-amber-700">
           Stok saat ini: {produk.stok}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, Produk } from "@/lib/supabase";
 import AngkaRibuanInput from "@/components/AngkaRibuanInput";
+import SearchableSelect from "@/components/SearchableSelect";
 
 type ItemBaris = {
   produk: Produk;
@@ -253,17 +254,16 @@ export default function TransaksiBaruPage() {
       <div className="mb-4 rounded-md border border-dashed border-gray-300 p-2.5">
         <div className="mb-2 text-xs text-gray-500">Tambah item</div>
         <label className="mb-1 block text-[11px] text-gray-400">Produk</label>
-        <select
-          className="mb-2 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+        <SearchableSelect
+          className="mb-2 w-full rounded-md border border-gray-300 px-2 py-1.5 text-left text-sm"
           value={pilihGroupKey}
-          onChange={(e) => pilihGroupBaru(e.target.value)}
-        >
-          {groups.map((g) => (
-            <option key={g.key} value={g.key}>
-              {g.nama} &middot; {g.gender}
-            </option>
-          ))}
-        </select>
+          onChange={pilihGroupBaru}
+          placeholder="Pilih produk"
+          options={groups.map((g) => ({
+            value: g.key,
+            label: `${g.nama} \u00b7 ${g.gender}`,
+          }))}
+        />
 
         <div className="mb-2 flex gap-2">
           <div className="flex-1">
