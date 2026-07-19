@@ -110,15 +110,32 @@ export default function TransaksiBaruPage() {
 
   function tambahItem() {
     if (!produkTerpilih) return;
-    setItems((prev) => [
-      ...prev,
-      {
-        produk: produkTerpilih,
-        ukuran: produkTerpilih.ukuran,
-        qty: pilihQty,
-        harga: pilihHarga,
-      },
-    ]);
+    setItems((prev) => {
+      const idx = prev.findIndex(
+        (it) =>
+          it.produk.id === produkTerpilih.id && it.ukuran === produkTerpilih.ukuran
+      );
+      if (idx >= 0) {
+        // Produk + ukuran sama sudah ada di list -> gabungkan qty-nya,
+        // harga dipakai yang terbaru diinput (kalau sempat diedit manual)
+        const updated = [...prev];
+        updated[idx] = {
+          ...updated[idx],
+          qty: updated[idx].qty + pilihQty,
+          harga: pilihHarga,
+        };
+        return updated;
+      }
+      return [
+        ...prev,
+        {
+          produk: produkTerpilih,
+          ukuran: produkTerpilih.ukuran,
+          qty: pilihQty,
+          harga: pilihHarga,
+        },
+      ];
+    });
     setPilihQty(1);
   }
 
