@@ -193,7 +193,13 @@ export default function TransaksiBaruPage() {
 
       router.push("/transaksi");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menyimpan transaksi.");
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "Gagal menyimpan transaksi.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
