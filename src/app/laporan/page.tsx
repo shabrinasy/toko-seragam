@@ -44,7 +44,8 @@ export default function LaporanPage() {
       .from("transaksi")
       .select("*")
       .gte("tanggal", start)
-      .lte("tanggal", end);
+      .lte("tanggal", end)
+      .eq("dibatalkan", false);
     const { data: detData } = await supabase.from("transaksi_detail").select("*");
 
     const rows: TrxRow[] = (trxData ?? []).map((t) => ({

@@ -24,6 +24,8 @@ export type Transaksi = {
   nominal_dp: number;
   sisa_tagihan: number;
   total: number;
+  dibatalkan: boolean;
+  dibatalkan_pada: string | null;
 };
 
 export type TransaksiDetail = {

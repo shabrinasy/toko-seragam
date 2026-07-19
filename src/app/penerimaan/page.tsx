@@ -36,7 +36,10 @@ export default function PenerimaanPage() {
       .select("*")
       .eq("produk_id", pId)
       .eq("status_barang", "PO");
-    const { data: transaksiList } = await supabase.from("transaksi").select("*");
+    const { data: transaksiList } = await supabase
+      .from("transaksi")
+      .select("*")
+      .eq("dibatalkan", false);
 
     const rows: PoBaris[] = (details ?? [])
       .map((d) => {
