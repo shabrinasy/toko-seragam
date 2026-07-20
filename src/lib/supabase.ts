@@ -44,6 +44,7 @@ export type PelunasanDp = {
   transaksi_id: number;
   tanggal_lunas: string;
   nominal_dilunasi: number;
+  menjadi_lunas: boolean;
 };
 
 export type PenerimaanBarang = {

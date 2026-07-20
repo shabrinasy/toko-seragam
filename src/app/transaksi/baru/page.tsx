@@ -38,6 +38,10 @@ export default function TransaksiBaruPage() {
   const router = useRouter();
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [namaPembeli, setNamaPembeli] = useState("");
+  const [pakaiTanggalLain, setPakaiTanggalLain] = useState(false);
+  const [tanggalCustom, setTanggalCustom] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [items, setItems] = useState<ItemBaris[]>([]);
   const [statusBayar, setStatusBayar] = useState<"Lunas" | "DP">("Lunas");
   const [nominalDp, setNominalDp] = useState<number>(0);
@@ -181,6 +185,7 @@ export default function TransaksiBaruPage() {
           nominal_dp: statusBayar === "DP" ? nominalDp : 0,
           sisa_tagihan: sisaTagihan,
           total,
+          ...(pakaiTanggalLain ? { tanggal: `${tanggalCustom}T12:00:00` } : {}),
         })
         .select()
         .single();
@@ -233,6 +238,28 @@ export default function TransaksiBaruPage() {
         onChange={(e) => setNamaPembeli(e.target.value)}
         placeholder="Nama pembeli"
       />
+
+      <label className="mb-3 flex items-center gap-1.5 text-xs text-gray-500">
+        <input
+          type="checkbox"
+          checked={pakaiTanggalLain}
+          onChange={(e) => setPakaiTanggalLain(e.target.checked)}
+        />
+        Transaksi ini untuk tanggal lain (misal input ulang transaksi lampau)
+      </label>
+      {pakaiTanggalLain && (
+        <div className="mb-3">
+          <label className="mb-1 block text-xs text-gray-500">
+            Tanggal transaksi
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={tanggalCustom}
+            onChange={(e) => setTanggalCustom(e.target.value)}
+          />
+        </div>
+      )}
 
       <div className="mb-1 text-xs text-gray-500">Item</div>
       {items.map((it, idx) => {
