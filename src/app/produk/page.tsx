@@ -10,14 +10,14 @@ const formatRp = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
 type SharedForm = {
   nama: string;
   kategori: string;
-  gender: "Putra" | "Putri";
+  gender: "Putra" | "Putri" | "";
   harga: number;
 };
 
 const emptySharedForm: SharedForm = {
   nama: "",
   kategori: "",
-  gender: "Putri",
+  gender: "",
   harga: 0,
 };
 
@@ -116,6 +116,10 @@ export default function ProdukPage() {
       setError("Nama wajib diisi.");
       return;
     }
+    if (!form.gender) {
+      setError("Gender wajib dipilih.");
+      return;
+    }
     if (form.harga <= 0) {
       setError("Harga default harus lebih dari 0.");
       return;
@@ -142,7 +146,7 @@ export default function ProdukPage() {
       nama: form.nama.trim(),
       ukuran: row.ukuran.trim(),
       kategori: form.kategori.trim() || null,
-      gender: form.gender,
+      gender: form.gender as "Putra" | "Putri",
       harga_default: form.harga,
       stok: row.stok,
     }));
@@ -182,6 +186,10 @@ export default function ProdukPage() {
       setError("Nama wajib diisi.");
       return;
     }
+    if (!editForm.gender) {
+      setError("Gender wajib dipilih.");
+      return;
+    }
     if (editForm.harga <= 0) {
       setError("Harga default harus lebih dari 0.");
       return;
@@ -193,7 +201,7 @@ export default function ProdukPage() {
       .update({
         nama: editForm.nama.trim(),
         kategori: editForm.kategori.trim() || null,
-        gender: editForm.gender,
+        gender: editForm.gender as "Putra" | "Putri",
         harga_default: editForm.harga,
         // stok & ukuran sengaja tidak diubah di sini -- tetap per baris,
         // dan stok hanya berubah lewat transaksi/Penerimaan Barang
@@ -238,10 +246,11 @@ export default function ProdukPage() {
               onChange={(e) =>
                 setState({
                   ...state,
-                  gender: e.target.value as "Putra" | "Putri",
+                  gender: e.target.value as "Putra" | "Putri" | "",
                 })
               }
             >
+              <option value="">-</option>
               <option value="Putri">Putri</option>
               <option value="Putra">Putra</option>
             </select>
