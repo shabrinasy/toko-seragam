@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, Transaksi, TransaksiDetail, Produk } from "@/lib/supabase";
+import { supabase, Transaksi, TransaksiDetail, Produk, fetchAllPages } from "@/lib/supabase";
 
 const formatRp = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
 
@@ -39,19 +39,19 @@ export default function RiwayatPage() {
 
   async function load() {
     setLoading(true);
-    const { data: trxData } = await supabase
-      .from("transaksi")
-      .select("*")
-      .order("tanggal", { ascending: false })
-      .range(0, 9999);
-    const { data: detData } = await supabase
-      .from("transaksi_detail")
-      .select("*")
-      .range(0, 9999);
-    const { data: produkData } = await supabase
-      .from("produk")
-      .select("*")
-      .range(0, 9999);
+    const trxData = await fetchAllPages<Transaksi>((from, to) =>
+      supabase
+        .from("transaksi")
+        .select("*")
+        .order("tanggal", { ascending: false })
+        .range(from, to)
+    );
+    const detData = await fetchAllPages<TransaksiDetail>((from, to) =>
+      supabase.from("transaksi_detail").select("*").range(from, to)
+    );
+    const produkData = await fetchAllPages<Produk>((from, to) =>
+      supabase.from("produk").select("*").range(from, to)
+    );
 
     setProdukMap(new Map((produkData ?? []).map((p) => [p.id, p])));
 

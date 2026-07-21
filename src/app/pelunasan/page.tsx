@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, Transaksi } from "@/lib/supabase";
+import { supabase, Transaksi, fetchAllPages } from "@/lib/supabase";
 import AngkaRibuanInput from "@/components/AngkaRibuanInput";
 
 const formatRp = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
@@ -20,14 +20,16 @@ export default function PelunasanPage() {
   }, []);
 
   async function load() {
-    const { data } = await supabase
-      .from("transaksi")
-      .select("*")
-      .eq("status_pembayaran", "DP")
-      .eq("dibatalkan", false)
-      .order("tanggal", { ascending: true })
-      .range(0, 9999);
-    setOutstanding(data ?? []);
+    const data = await fetchAllPages<Transaksi>((from, to) =>
+      supabase
+        .from("transaksi")
+        .select("*")
+        .eq("status_pembayaran", "DP")
+        .eq("dibatalkan", false)
+        .order("tanggal", { ascending: true })
+        .range(from, to)
+    );
+    setOutstanding(data);
   }
 
   function bukaForm(trx: Transaksi) {

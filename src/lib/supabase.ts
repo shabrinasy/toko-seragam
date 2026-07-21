@@ -5,12 +5,39 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+/**
+ * Ambil SEMUA baris dari sebuah query, walaupun jumlahnya melebihi batas
+ * "Max Rows" yang dikonfigurasi di project Supabase (defaultnya sering
+ * 1000). Ini mengambil data bertahap per 1000 baris sampai benar-benar
+ * habis, jadi tidak pernah kepotong walau data sudah sangat banyak.
+ */
+export async function fetchAllPages<T>(
+  build: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const pageSize = 1000;
+  let from = 0;
+  let all: T[] = [];
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await build(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const chunk = data ?? [];
+    all = all.concat(chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 export type Produk = {
   id: number;
   nama: string;
   ukuran: string;
   kategori: string | null;
-  gender: "Putra" | "Putri";
+  gender: "Putra" | "Putri" | "-";
   harga_default: number;
   stok: number;
 };

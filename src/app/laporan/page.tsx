@@ -8,6 +8,7 @@ import {
   TransaksiDetail,
   PelunasanDp,
   Produk,
+  fetchAllPages,
 } from "@/lib/supabase";
 
 const formatRp = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
@@ -37,43 +38,44 @@ export default function LaporanPage() {
     const start = `${tanggal}T00:00:00`;
     const end = `${tanggal}T23:59:59`;
 
-    const { data: produkData } = await supabase
-      .from("produk")
-      .select("*")
-      .range(0, 9999);
-    setProdukMap(new Map((produkData ?? []).map((p) => [p.id, p])));
+    const produkData = await fetchAllPages<Produk>((from, to) =>
+      supabase.from("produk").select("*").range(from, to)
+    );
+    setProdukMap(new Map(produkData.map((p) => [p.id, p])));
 
-    const { data: trxData } = await supabase
-      .from("transaksi")
-      .select("*")
-      .gte("tanggal", start)
-      .lte("tanggal", end)
-      .eq("dibatalkan", false)
-      .range(0, 9999);
-    const { data: detData } = await supabase
-      .from("transaksi_detail")
-      .select("*")
-      .range(0, 9999);
+    const trxData = await fetchAllPages<Transaksi>((from, to) =>
+      supabase
+        .from("transaksi")
+        .select("*")
+        .gte("tanggal", start)
+        .lte("tanggal", end)
+        .eq("dibatalkan", false)
+        .range(from, to)
+    );
+    const detData = await fetchAllPages<TransaksiDetail>((from, to) =>
+      supabase.from("transaksi_detail").select("*").range(from, to)
+    );
 
-    const rows: TrxRow[] = (trxData ?? []).map((t) => ({
+    const rows: TrxRow[] = trxData.map((t) => ({
       ...t,
-      details: (detData ?? []).filter((d) => d.transaksi_id === t.id),
+      details: detData.filter((d) => d.transaksi_id === t.id),
     }));
     setTrxHariIni(rows);
 
-    const { data: pelData } = await supabase
-      .from("pelunasan_dp")
-      .select("*")
-      .gte("tanggal_lunas", start)
-      .lte("tanggal_lunas", end)
-      .range(0, 9999);
-    const { data: allTrx } = await supabase
-      .from("transaksi")
-      .select("*")
-      .range(0, 9999);
-    const pelRows = (pelData ?? [])
+    const pelData = await fetchAllPages<PelunasanDp>((from, to) =>
+      supabase
+        .from("pelunasan_dp")
+        .select("*")
+        .gte("tanggal_lunas", start)
+        .lte("tanggal_lunas", end)
+        .range(from, to)
+    );
+    const allTrx = await fetchAllPages<Transaksi>((from, to) =>
+      supabase.from("transaksi").select("*").range(from, to)
+    );
+    const pelRows = pelData
       .map((p) => {
-        const t = (allTrx ?? []).find((tt) => tt.id === p.transaksi_id);
+        const t = allTrx.find((tt) => tt.id === p.transaksi_id);
         return t ? { ...p, transaksi: t } : null;
       })
       .filter((r): r is PelunasanDp & { transaksi: Transaksi } => r !== null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase, Produk, Transaksi, TransaksiDetail } from "@/lib/supabase";
+import { supabase, Produk, Transaksi, TransaksiDetail, fetchAllPages } from "@/lib/supabase";
 import SearchableSelect from "@/components/SearchableSelect";
 
 type PoBaris = TransaksiDetail & { transaksi: Transaksi };
@@ -15,15 +15,12 @@ export default function PenerimaanPage() {
   const [pesan, setPesan] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("produk")
-      .select("*")
-      .order("nama")
-      .range(0, 9999)
-      .then(({ data }) => {
-        setProdukList(data ?? []);
-        if (data && data.length > 0) setProdukId(data[0].id);
-      });
+    fetchAllPages<Produk>((from, to) =>
+      supabase.from("produk").select("*").order("nama").range(from, to)
+    ).then((data) => {
+      setProdukList(data);
+      if (data.length > 0) setProdukId(data[0].id);
+    });
   }, []);
 
   useEffect(() => {
@@ -32,21 +29,25 @@ export default function PenerimaanPage() {
   }, [produkId]);
 
   async function loadPo(pId: number) {
-    const { data: details } = await supabase
-      .from("transaksi_detail")
-      .select("*")
-      .eq("produk_id", pId)
-      .eq("status_barang", "PO")
-      .range(0, 9999);
-    const { data: transaksiList } = await supabase
-      .from("transaksi")
-      .select("*")
-      .eq("dibatalkan", false)
-      .range(0, 9999);
+    const details = await fetchAllPages<TransaksiDetail>((from, to) =>
+      supabase
+        .from("transaksi_detail")
+        .select("*")
+        .eq("produk_id", pId)
+        .eq("status_barang", "PO")
+        .range(from, to)
+    );
+    const transaksiList = await fetchAllPages<Transaksi>((from, to) =>
+      supabase
+        .from("transaksi")
+        .select("*")
+        .eq("dibatalkan", false)
+        .range(from, to)
+    );
 
-    const rows: PoBaris[] = (details ?? [])
+    const rows: PoBaris[] = details
       .map((d) => {
-        const t = (transaksiList ?? []).find((tt) => tt.id === d.transaksi_id);
+        const t = transaksiList.find((tt) => tt.id === d.transaksi_id);
         return t ? { ...d, transaksi: t } : null;
       })
       .filter((r): r is PoBaris => r !== null)
@@ -104,12 +105,10 @@ export default function PenerimaanPage() {
       setPesan("Barang masuk berhasil dicatat.");
       setJumlahMasuk(1);
       loadPo(produk.id);
-      const { data } = await supabase
-        .from("produk")
-        .select("*")
-        .order("nama")
-        .range(0, 9999);
-      setProdukList(data ?? []);
+      const data = await fetchAllPages<Produk>((from, to) =>
+        supabase.from("produk").select("*").order("nama").range(from, to)
+      );
+      setProdukList(data);
     } finally {
       setSaving(false);
     }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase, Produk } from "@/lib/supabase";
+import { supabase, Produk, fetchAllPages } from "@/lib/supabase";
 import AngkaRibuanInput from "@/components/AngkaRibuanInput";
 import SearchableSelect from "@/components/SearchableSelect";
 
@@ -16,7 +16,7 @@ type ItemBaris = {
 type ProdukGroup = {
   key: string;
   nama: string;
-  gender: "Putra" | "Putri";
+  gender: "Putra" | "Putri" | "-";
   varian: Produk[]; // satu baris per ukuran
 };
 
