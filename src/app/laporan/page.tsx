@@ -35,6 +35,7 @@ export default function LaporanPage() {
   const [loading, setLoading] = useState(true);
   const [poGroups, setPoGroups] = useState<PoGroupRow[]>([]);
   const [loadingPo, setLoadingPo] = useState(true);
+  const [tab, setTab] = useState<"harian" | "po">("harian");
 
   useEffect(() => {
     loadPoGroups();
@@ -284,123 +285,148 @@ export default function LaporanPage() {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-lg font-medium">Laporan harian</h1>
-      </div>
-      <input
-        type="date"
-        className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        value={tanggal}
-        onChange={(e) => setTanggal(e.target.value)}
-      />
-
-      <div className="mb-2 grid grid-cols-2 gap-2">
-        <div className="rounded-md bg-gray-100 p-2.5">
-          <div className="text-[11px] text-gray-500">Penjualan lunas</div>
-          <div className="text-base font-medium">{formatRp(totalLunas)}</div>
-        </div>
-        <div className="rounded-md bg-gray-100 p-2.5">
-          <div className="text-[11px] text-gray-500">DP diterima</div>
-          <div className="text-base font-medium">{formatRp(totalDpDiterima)}</div>
-        </div>
-        <div className="rounded-md bg-gray-100 p-2.5">
-          <div className="text-[11px] text-gray-500">Pelunasan DP</div>
-          <div className="text-base font-medium">{formatRp(totalPelunasan)}</div>
-        </div>
-        <div className="rounded-md bg-blue-50 p-2.5">
-          <div className="text-[11px] text-blue-700">Total kas masuk</div>
-          <div className="text-base font-medium text-blue-700">
-            {formatRp(grandTotal)}
-          </div>
-        </div>
+        <h1 className="text-lg font-medium">Laporan</h1>
       </div>
 
-      <div className="my-3 text-xs text-gray-500">
-        Rincian transaksi ({trxHariIni.length})
-      </div>
-      {loading && <div className="text-sm text-gray-400">Memuat...</div>}
-      {!loading &&
-        trxHariIni.map((t) => (
-          <div key={t.id} className="mb-2 rounded-md border border-gray-200 p-2">
-            <div className="mb-1 flex justify-between text-sm">
-              <span className="font-medium">
-                {t.no_transaksi} &middot; {t.nama_pembeli}
-              </span>
-              <span className="font-medium">{formatRp(t.total)}</span>
-            </div>
-            <div className="space-y-1">
-              {t.details.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex items-center justify-between rounded bg-gray-50 px-2 py-1 text-xs"
-                >
-                  <span className="text-gray-700">
-                    {namaProduk(d.produk_id)} {d.ukuran} &times;{d.qty}
-                  </span>
-                  <span
-                    className={`ml-2 shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
-                      d.status_barang === "Tersedia"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {d.status_barang}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-
-      <button
-        onClick={exportExcel}
-        className="mt-4 w-full rounded-md bg-blue-700 py-2.5 text-sm font-medium text-white"
-      >
-        Export ke Excel
-      </button>
-
-      <div className="mt-8 border-t border-gray-200 pt-4">
-        <h2 className="mb-1 text-base font-medium">Barang masih PO</h2>
-        <p className="mb-3 text-xs text-gray-500">
-          Digabung per nama produk, gender, dan ukuran (semua transaksi
-          aktif, tidak terikat tanggal di atas).
-        </p>
-
-        {loadingPo && (
-          <div className="text-sm text-gray-400">Memuat...</div>
-        )}
-        {!loadingPo && poGroups.length === 0 && (
-          <div className="text-sm text-gray-400">
-            Tidak ada barang yang masih PO.
-          </div>
-        )}
-        {!loadingPo &&
-          poGroups.map((g, i) => (
-            <div
-              key={i}
-              className="mb-1.5 flex items-center justify-between rounded-md border border-gray-200 px-2.5 py-2"
-            >
-              <div>
-                <div className="text-sm font-medium">
-                  {g.nama} &middot; {g.gender} &middot; {g.ukuran}
-                </div>
-                <div className="text-[11px] text-gray-400">
-                  {g.jumlahTransaksi} transaksi &middot; {g.pembeli.join(", ")}
-                </div>
-              </div>
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                {g.totalQty} unit
-              </span>
-            </div>
-          ))}
-
+      <div className="mb-4 flex rounded-md border border-gray-300 p-1">
         <button
-          onClick={exportPoExcel}
-          disabled={poGroups.length === 0}
-          className="mt-3 w-full rounded-md bg-amber-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          onClick={() => setTab("harian")}
+          className={`flex-1 rounded py-1.5 text-sm font-medium ${
+            tab === "harian" ? "bg-blue-700 text-white" : "text-gray-600"
+          }`}
         >
-          Export daftar PO ke Excel
+          Harian
+        </button>
+        <button
+          onClick={() => setTab("po")}
+          className={`flex-1 rounded py-1.5 text-sm font-medium ${
+            tab === "po" ? "bg-blue-700 text-white" : "text-gray-600"
+          }`}
+        >
+          PO {poGroups.length > 0 && `(${poGroups.length})`}
         </button>
       </div>
+
+      {tab === "harian" && (
+        <div>
+          <input
+            type="date"
+            className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={tanggal}
+            onChange={(e) => setTanggal(e.target.value)}
+          />
+
+          <div className="mb-2 grid grid-cols-2 gap-2">
+            <div className="rounded-md bg-gray-100 p-2.5">
+              <div className="text-[11px] text-gray-500">Penjualan lunas</div>
+              <div className="text-base font-medium">{formatRp(totalLunas)}</div>
+            </div>
+            <div className="rounded-md bg-gray-100 p-2.5">
+              <div className="text-[11px] text-gray-500">DP diterima</div>
+              <div className="text-base font-medium">{formatRp(totalDpDiterima)}</div>
+            </div>
+            <div className="rounded-md bg-gray-100 p-2.5">
+              <div className="text-[11px] text-gray-500">Pelunasan DP</div>
+              <div className="text-base font-medium">{formatRp(totalPelunasan)}</div>
+            </div>
+            <div className="rounded-md bg-blue-50 p-2.5">
+              <div className="text-[11px] text-blue-700">Total kas masuk</div>
+              <div className="text-base font-medium text-blue-700">
+                {formatRp(grandTotal)}
+              </div>
+            </div>
+          </div>
+
+          <div className="my-3 text-xs text-gray-500">
+            Rincian transaksi ({trxHariIni.length})
+          </div>
+          {loading && <div className="text-sm text-gray-400">Memuat...</div>}
+          {!loading &&
+            trxHariIni.map((t) => (
+              <div key={t.id} className="mb-2 rounded-md border border-gray-200 p-2">
+                <div className="mb-1 flex justify-between text-sm">
+                  <span className="font-medium">
+                    {t.no_transaksi} &middot; {t.nama_pembeli}
+                  </span>
+                  <span className="font-medium">{formatRp(t.total)}</span>
+                </div>
+                <div className="space-y-1">
+                  {t.details.map((d) => (
+                    <div
+                      key={d.id}
+                      className="flex items-center justify-between rounded bg-gray-50 px-2 py-1 text-xs"
+                    >
+                      <span className="text-gray-700">
+                        {namaProduk(d.produk_id)} {d.ukuran} &times;{d.qty}
+                      </span>
+                      <span
+                        className={`ml-2 shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
+                          d.status_barang === "Tersedia"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {d.status_barang}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+          <button
+            onClick={exportExcel}
+            className="mt-4 w-full rounded-md bg-blue-700 py-2.5 text-sm font-medium text-white"
+          >
+            Export ke Excel
+          </button>
+        </div>
+      )}
+
+      {tab === "po" && (
+        <div>
+          <p className="mb-3 text-xs text-gray-500">
+            Digabung per nama produk, gender, dan ukuran (semua transaksi
+            aktif, tidak terikat tanggal).
+          </p>
+
+          {loadingPo && (
+            <div className="text-sm text-gray-400">Memuat...</div>
+          )}
+          {!loadingPo && poGroups.length === 0 && (
+            <div className="text-sm text-gray-400">
+              Tidak ada barang yang masih PO.
+            </div>
+          )}
+          {!loadingPo &&
+            poGroups.map((g, i) => (
+              <div
+                key={i}
+                className="mb-1.5 flex items-center justify-between rounded-md border border-gray-200 px-2.5 py-2"
+              >
+                <div>
+                  <div className="text-sm font-medium">
+                    {g.nama} &middot; {g.gender} &middot; {g.ukuran}
+                  </div>
+                  <div className="text-[11px] text-gray-400">
+                    {g.jumlahTransaksi} transaksi &middot; {g.pembeli.join(", ")}
+                  </div>
+                </div>
+                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  {g.totalQty} unit
+                </span>
+              </div>
+            ))}
+
+          <button
+            onClick={exportPoExcel}
+            disabled={poGroups.length === 0}
+            className="mt-3 w-full rounded-md bg-amber-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Export daftar PO ke Excel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
