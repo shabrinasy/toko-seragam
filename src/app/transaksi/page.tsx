@@ -11,6 +11,12 @@ export default function RiwayatPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [produkMap, setProdukMap] = useState<Map<number, Produk>>(new Map());
   const [search, setSearch] = useState("");
+  const [filterTanggal, setFilterTanggal] = useState<
+    "Semua" | "Hari ini" | "7 hari" | "30 hari" | "Tertentu"
+  >("Semua");
+  const [tanggalTertentu, setTanggalTertentu] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [filterBayar, setFilterBayar] = useState<"Semua" | "Lunas" | "DP">(
     "Semua"
   );
@@ -111,8 +117,30 @@ export default function RiwayatPage() {
     load();
   }
 
+  function cocokTanggal(r: Row) {
+    if (filterTanggal === "Semua") return true;
+    const tglTrx = new Date(r.tanggal);
+    const now = new Date();
+
+    if (filterTanggal === "Tertentu") {
+      const target = new Date(tanggalTertentu + "T00:00:00");
+      return (
+        tglTrx.getFullYear() === target.getFullYear() &&
+        tglTrx.getMonth() === target.getMonth() &&
+        tglTrx.getDate() === target.getDate()
+      );
+    }
+
+    const hariBatas = filterTanggal === "Hari ini" ? 0 : filterTanggal === "7 hari" ? 7 : 30;
+    const batas = new Date(now);
+    batas.setDate(batas.getDate() - hariBatas);
+    batas.setHours(0, 0, 0, 0);
+    return tglTrx >= batas;
+  }
+
   const filtered = rows.filter((r) => {
     if (!tampilkanDibatalkan && r.dibatalkan) return false;
+    if (!cocokTanggal(r)) return false;
     if (search && !r.nama_pembeli.toLowerCase().includes(search.toLowerCase()))
       return false;
     if (filterBayar !== "Semua" && r.status_pembayaran !== filterBayar)
@@ -134,6 +162,28 @@ export default function RiwayatPage() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+
+      <div className="mb-2">
+        <select
+          className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+          value={filterTanggal}
+          onChange={(e) => setFilterTanggal(e.target.value as typeof filterTanggal)}
+        >
+          <option value="Semua">Semua tanggal</option>
+          <option value="Hari ini">Hari ini</option>
+          <option value="7 hari">7 hari terakhir</option>
+          <option value="30 hari">30 hari terakhir</option>
+          <option value="Tertentu">Tanggal tertentu...</option>
+        </select>
+        {filterTanggal === "Tertentu" && (
+          <input
+            type="date"
+            className="mt-2 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            value={tanggalTertentu}
+            onChange={(e) => setTanggalTertentu(e.target.value)}
+          />
+        )}
+      </div>
 
       <div className="mb-2 flex gap-2">
         <select
