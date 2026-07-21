@@ -36,9 +36,16 @@ export default function RiwayatPage() {
     const { data: trxData } = await supabase
       .from("transaksi")
       .select("*")
-      .order("tanggal", { ascending: false });
-    const { data: detData } = await supabase.from("transaksi_detail").select("*");
-    const { data: produkData } = await supabase.from("produk").select("*");
+      .order("tanggal", { ascending: false })
+      .range(0, 9999);
+    const { data: detData } = await supabase
+      .from("transaksi_detail")
+      .select("*")
+      .range(0, 9999);
+    const { data: produkData } = await supabase
+      .from("produk")
+      .select("*")
+      .range(0, 9999);
 
     setProdukMap(new Map((produkData ?? []).map((p) => [p.id, p])));
 

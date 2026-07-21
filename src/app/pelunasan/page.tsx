@@ -25,7 +25,8 @@ export default function PelunasanPage() {
       .select("*")
       .eq("status_pembayaran", "DP")
       .eq("dibatalkan", false)
-      .order("tanggal", { ascending: true });
+      .order("tanggal", { ascending: true })
+      .range(0, 9999);
     setOutstanding(data ?? []);
   }
 

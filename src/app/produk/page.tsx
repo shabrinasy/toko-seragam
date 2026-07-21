@@ -80,7 +80,11 @@ export default function ProdukPage() {
   }, []);
 
   async function load() {
-    const { data } = await supabase.from("produk").select("*").order("nama");
+    const { data } = await supabase
+      .from("produk")
+      .select("*")
+      .order("nama")
+      .range(0, 9999);
     setProdukList(data ?? []);
   }
 

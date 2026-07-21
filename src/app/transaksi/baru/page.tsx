@@ -64,6 +64,7 @@ export default function TransaksiBaruPage() {
       .from("produk")
       .select("*")
       .order("nama")
+      .range(0, 9999)
       .then(({ data }) => {
         const list = data ?? [];
         setProdukList(list);
@@ -170,48 +171,19 @@ export default function TransaksiBaruPage() {
 
     setSaving(true);
     try {
-      const { data: noTrxData, error: noTrxErr } = await supabase.rpc(
-        "generate_no_transaksi"
-      );
-      if (noTrxErr) throw noTrxErr;
-      const noTransaksi = noTrxData as string;
-
-      const { data: trx, error: trxErr } = await supabase
-        .from("transaksi")
-        .insert({
-          no_transaksi: noTransaksi,
-          nama_pembeli: namaPembeli.trim(),
-          status_pembayaran: statusBayar,
-          nominal_dp: statusBayar === "DP" ? nominalDp : 0,
-          sisa_tagihan: sisaTagihan,
-          total,
-          ...(pakaiTanggalLain ? { tanggal: `${tanggalCustom}T12:00:00` } : {}),
-        })
-        .select()
-        .single();
-      if (trxErr) throw trxErr;
-
-      for (const it of items) {
-        const statusBarang: "Tersedia" | "PO" =
-          it.produk.stok >= it.qty ? "Tersedia" : "PO";
-
-        const { error: detErr } = await supabase.from("transaksi_detail").insert({
-          transaksi_id: trx.id,
+      const { error: rpcErr } = await supabase.rpc("buat_transaksi", {
+        p_nama_pembeli: namaPembeli.trim(),
+        p_status_pembayaran: statusBayar,
+        p_nominal_dp: statusBayar === "DP" ? nominalDp : 0,
+        p_tanggal: pakaiTanggalLain ? `${tanggalCustom}T12:00:00` : null,
+        p_items: items.map((it) => ({
           produk_id: it.produk.id,
           ukuran: it.ukuran,
           qty: it.qty,
           harga: it.harga,
-          subtotal: it.harga * it.qty,
-          status_barang: statusBarang,
-        });
-        if (detErr) throw detErr;
-
-        const { error: stokErr } = await supabase
-          .from("produk")
-          .update({ stok: it.produk.stok - it.qty })
-          .eq("id", it.produk.id);
-        if (stokErr) throw stokErr;
-      }
+        })),
+      });
+      if (rpcErr) throw rpcErr;
 
       router.push("/transaksi");
     } catch (e) {

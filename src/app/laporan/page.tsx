@@ -37,7 +37,10 @@ export default function LaporanPage() {
     const start = `${tanggal}T00:00:00`;
     const end = `${tanggal}T23:59:59`;
 
-    const { data: produkData } = await supabase.from("produk").select("*");
+    const { data: produkData } = await supabase
+      .from("produk")
+      .select("*")
+      .range(0, 9999);
     setProdukMap(new Map((produkData ?? []).map((p) => [p.id, p])));
 
     const { data: trxData } = await supabase
@@ -45,8 +48,12 @@ export default function LaporanPage() {
       .select("*")
       .gte("tanggal", start)
       .lte("tanggal", end)
-      .eq("dibatalkan", false);
-    const { data: detData } = await supabase.from("transaksi_detail").select("*");
+      .eq("dibatalkan", false)
+      .range(0, 9999);
+    const { data: detData } = await supabase
+      .from("transaksi_detail")
+      .select("*")
+      .range(0, 9999);
 
     const rows: TrxRow[] = (trxData ?? []).map((t) => ({
       ...t,
@@ -58,8 +65,12 @@ export default function LaporanPage() {
       .from("pelunasan_dp")
       .select("*")
       .gte("tanggal_lunas", start)
-      .lte("tanggal_lunas", end);
-    const { data: allTrx } = await supabase.from("transaksi").select("*");
+      .lte("tanggal_lunas", end)
+      .range(0, 9999);
+    const { data: allTrx } = await supabase
+      .from("transaksi")
+      .select("*")
+      .range(0, 9999);
     const pelRows = (pelData ?? [])
       .map((p) => {
         const t = (allTrx ?? []).find((tt) => tt.id === p.transaksi_id);

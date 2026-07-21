@@ -19,6 +19,7 @@ export default function PenerimaanPage() {
       .from("produk")
       .select("*")
       .order("nama")
+      .range(0, 9999)
       .then(({ data }) => {
         setProdukList(data ?? []);
         if (data && data.length > 0) setProdukId(data[0].id);
@@ -35,11 +36,13 @@ export default function PenerimaanPage() {
       .from("transaksi_detail")
       .select("*")
       .eq("produk_id", pId)
-      .eq("status_barang", "PO");
+      .eq("status_barang", "PO")
+      .range(0, 9999);
     const { data: transaksiList } = await supabase
       .from("transaksi")
       .select("*")
-      .eq("dibatalkan", false);
+      .eq("dibatalkan", false)
+      .range(0, 9999);
 
     const rows: PoBaris[] = (details ?? [])
       .map((d) => {
@@ -101,7 +104,11 @@ export default function PenerimaanPage() {
       setPesan("Barang masuk berhasil dicatat.");
       setJumlahMasuk(1);
       loadPo(produk.id);
-      const { data } = await supabase.from("produk").select("*").order("nama");
+      const { data } = await supabase
+        .from("produk")
+        .select("*")
+        .order("nama")
+        .range(0, 9999);
       setProdukList(data ?? []);
     } finally {
       setSaving(false);
