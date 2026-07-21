@@ -340,6 +340,14 @@ export default function LaporanPage() {
           <div className="my-3 text-xs text-gray-500">
             Rincian transaksi ({trxHariIni.length})
           </div>
+
+          <button
+            onClick={exportExcel}
+            className="mb-3 w-full rounded-md bg-blue-700 py-2.5 text-sm font-medium text-white"
+          >
+            Export ke Excel
+          </button>
+
           {loading && <div className="text-sm text-gray-400">Memuat...</div>}
           {!loading &&
             trxHariIni.map((t) => (
@@ -373,13 +381,6 @@ export default function LaporanPage() {
                 </div>
               </div>
             ))}
-
-          <button
-            onClick={exportExcel}
-            className="mt-4 w-full rounded-md bg-blue-700 py-2.5 text-sm font-medium text-white"
-          >
-            Export ke Excel
-          </button>
         </div>
       )}
 
@@ -389,6 +390,14 @@ export default function LaporanPage() {
             Digabung per nama produk, gender, dan ukuran (semua transaksi
             aktif, tidak terikat tanggal).
           </p>
+
+          <button
+            onClick={exportPoExcel}
+            disabled={poGroups.length === 0}
+            className="mb-4 w-full rounded-md bg-amber-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Export daftar PO ke Excel
+          </button>
 
           {loadingPo && (
             <div className="text-sm text-gray-400">Memuat...</div>
@@ -417,14 +426,6 @@ export default function LaporanPage() {
                 </span>
               </div>
             ))}
-
-          <button
-            onClick={exportPoExcel}
-            disabled={poGroups.length === 0}
-            className="mt-3 w-full rounded-md bg-amber-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Export daftar PO ke Excel
-          </button>
         </div>
       )}
     </div>
